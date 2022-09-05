@@ -1,13 +1,20 @@
-﻿using DRCBot.Responders;
+﻿using DRCBot.Commands;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Remora.Discord.API.Abstractions.Gateway.Commands;
+using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
+using Remora.Commands.Extensions;
+using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Gateway.Commands;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Extensions;
+using Remora.Discord.Commands.Responders;
+using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
+using Remora.Discord.Gateway.Responders;
 using Remora.Discord.Hosting.Extensions;
 
 var host = Host
@@ -17,14 +24,60 @@ var host = Host
     {
         services.Configure<DiscordGatewayClientOptions>(options =>
         {
-            options.Intents |= GatewayIntents.GuildMessageReactions;
+            //options.Intents |= GatewayIntents.GuildMessageReactions;
             options.Presence = new UpdatePresence(ClientStatus.Idle, false, DateTimeOffset.Now, new IActivity[]
             {
                 new Activity("saus!!", ActivityType.Game)
             });
         });
-        services.AddResponder<MessageReactionResponder>();
+
+        services.AddDiscordCommands(true);
+        services.Configure<InteractionResponderOptions>(options =>
+        {
+            //options.SuppressAutomaticResponses = true;
+            options.UseEphemeralResponses = true;
+        });
+        var tree = services.AddCommandTree();
+        
+        // voodoo reflection magic to find all event responders and register them automatically
+        foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
+                     .SelectMany(s => s.GetTypes())
+                     .Where(p => !p.IsInterface && typeof(IResponder).IsAssignableFrom(p)))
+            services.AddResponder(type);
+        foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
+                     .SelectMany(s => s.GetTypes())
+                     .Where(p => p != typeof(CommandGroup) && typeof(CommandGroup).IsAssignableFrom(p)))
+            tree.WithCommandGroup(type);
+
+        tree.Finish();
+        services.AddPostExecutionEvent<PostExecutionEventLogger>();
+
+        services.AddSingleton<IMongoClient>(sp => new MongoClient(sp.GetService<IConfiguration>()
+            .GetRequiredSection("MongoDB").GetValue<string>("ConnectionString")));
+        services.AddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(sp.GetService<IConfiguration>()
+            .GetRequiredSection("MongoDB").GetValue<string>("Database")));
     })
     .Build();
+
+using (var scope = host.Services.CreateScope())
+{
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var slashService = scope.ServiceProvider.GetRequiredService<SlashService>();
+    logger.LogInformation("Updating slash commands...");
+    var checkSlashSupport = slashService.SupportsSlashCommands();
+    if (!checkSlashSupport.IsSuccess)
+    {
+        logger.LogWarning("The registered commands of the bot don't support slash commands: {Reason}",
+            checkSlashSupport.Error?.Message);
+    }
+    else
+    {
+        var updateSlash = await slashService.UpdateSlashCommandsAsync();
+        if (!updateSlash.IsSuccess)
+        {
+            logger.LogWarning("Failed to update slash commands: {Reason}", updateSlash.Error?.Message);
+        }
+    }
+}
 
 await host.RunAsync();
