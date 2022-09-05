@@ -10,7 +10,7 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
       <PackageReference Include="MongoDB.Driver" Version="2.17.1" />
-      <PackageReference Include="Remora.Discord" Version="2022.47.0" />
+      <PackageReference Include="Remora.Discord" Version="2022.48.0" />
     </ItemGroup>
 
 </Project>
