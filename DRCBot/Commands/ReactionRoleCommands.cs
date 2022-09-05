@@ -93,7 +93,9 @@ public class ReactionRoleCommands : CommandGroup
 
         // at this point we've verified that the message has only button components
         var buttons = message.Components.HasValue
-            ? message.Components.Value.SelectMany(c => (List<ButtonComponent>)((ActionRowComponent)c).Components)
+            ? message.Components.Value
+                .SelectMany(c => ((ActionRowComponent)c).Components)
+                .Select(b => (ButtonComponent) b)
                 .ToList()
             : new List<ButtonComponent>();
 
