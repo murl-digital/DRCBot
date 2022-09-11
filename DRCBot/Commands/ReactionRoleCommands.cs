@@ -72,6 +72,7 @@ public class ReactionRoleCommands : CommandGroup
         IRole role,
         [Description("The emoji you want to use on the button (if any).")]
         IEmoji? emoji = null,
+        [Description("The name that'll show up on the button. This is the name of the role by default")]
         string? name = null)
     {
         if (_commandContext is not InteractionContext interactionContext)
