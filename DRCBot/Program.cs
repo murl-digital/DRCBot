@@ -1,4 +1,6 @@
 ﻿using DRCBot.Commands;
+using DRCBot.lavalink;
+using Lavalink4NET;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -6,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Remora.Commands.Extensions;
 using Remora.Commands.Groups;
+using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Gateway.Commands;
 using Remora.Discord.API.Objects;
@@ -19,12 +22,13 @@ using Remora.Discord.Hosting.Extensions;
 
 var host = Host
     .CreateDefaultBuilder()
-    .AddDiscordService(services => services.GetService<IConfiguration>().GetRequiredSection("Discord").GetValue<string>("Token"))
+    .AddDiscordService(services =>
+        services.GetService<IConfiguration>().GetRequiredSection("Discord").GetValue<string>("Token"))
     .ConfigureServices(services =>
     {
         services.Configure<DiscordGatewayClientOptions>(options =>
         {
-            //options.Intents |= GatewayIntents.GuildMessageReactions;
+            options.Intents |= GatewayIntents.GuildVoiceStates;
             options.Presence = new UpdatePresence(ClientStatus.Idle, false, DateTimeOffset.Now, new IActivity[]
             {
                 new Activity("saus!!", ActivityType.Game)
@@ -38,12 +42,13 @@ var host = Host
             options.UseEphemeralResponses = true;
         });
         var tree = services.AddCommandTree();
-        
+
         // voodoo reflection magic to find all event responders and register them automatically
         foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
                      .SelectMany(s => s.GetTypes())
                      .Where(p => !p.IsInterface && typeof(IResponder).IsAssignableFrom(p)))
             services.AddResponder(type);
+
         foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
                      .SelectMany(s => s.GetTypes())
                      .Where(p => p != typeof(CommandGroup) && typeof(CommandGroup).IsAssignableFrom(p)))
@@ -52,9 +57,25 @@ var host = Host
         tree.Finish();
         services.AddPostExecutionEvent<PostExecutionEventLogger>();
 
+        services.AddSingleton<IAudioService, LavalinkNode>();
+        services.AddSingleton<IDiscordClientWrapper, RemoraClientWrapper>();
+        services.AddSingleton(sp => new LavalinkNodeOptions
+        {
+            RestUri =
+                sp.GetService<IConfiguration>().GetRequiredSection("Lavalink")
+                    .GetValue<string>("RestUri"),
+            WebSocketUri =
+                sp.GetService<IConfiguration>().GetRequiredSection("Lavalink")
+                    .GetValue<string>("WebSocketUri"),
+            Password = 
+                sp.GetService<IConfiguration>().GetRequiredSection("Lavalink")
+                    .GetValue<string>("Password")
+        });
+
         services.AddSingleton<IMongoClient>(sp => new MongoClient(sp.GetService<IConfiguration>()
             .GetRequiredSection("MongoDB").GetValue<string>("ConnectionString")));
-        services.AddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(sp.GetService<IConfiguration>()
+        services.AddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(sp
+            .GetService<IConfiguration>()
             .GetRequiredSection("MongoDB").GetValue<string>("Database")));
     })
     .Build();
