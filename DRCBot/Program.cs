@@ -71,6 +71,7 @@ var host = Host
                 sp.GetService<IConfiguration>().GetRequiredSection("Lavalink")
                     .GetValue<string>("Password")
         });
+        services.AddSingleton<IVoiceStateTracker, VoiceStateTracker>();
 
         services.AddSingleton<IMongoClient>(sp => new MongoClient(sp.GetService<IConfiguration>()
             .GetRequiredSection("MongoDB").GetValue<string>("ConnectionString")));
