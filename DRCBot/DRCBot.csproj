@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Lavalink4NET" Version="2.1.1" />
+      <PackageReference Include="Lavalink4NET" Version="3.0.0-preview.11" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
       <PackageReference Include="MongoDB.Driver" Version="2.17.1" />
       <PackageReference Include="Remora.Discord" Version="2022.48.0" />
