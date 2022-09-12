@@ -38,13 +38,10 @@ public class RemoraClientWrapper : IDiscordClientWrapper
         return Task.CompletedTask;
     }
 
-    public async Task<IEnumerable<ulong>> GetChannelUsersAsync(ulong guildId, ulong voiceChannelId)
+    public Task<IEnumerable<ulong>> GetChannelUsersAsync(ulong guildId, ulong voiceChannelId)
     {
-        // TODO: look into giving proper channel user estimations
-        return new ulong[]
-        {
-            12345
-        };
+        var voiceStateTracker = _serviceProvider.GetRequiredService<IVoiceStateTracker>();
+        return Task.FromResult(voiceStateTracker.EstimateChannelMembers(guildId, voiceChannelId));
     }
 
     public Task InvokeVoiceStateUpdated(ulong userId, ulong guildId, ulong? channelId, string sessionId)
