@@ -1,6 +1,7 @@
 ﻿using DRCBot.Commands;
 using DRCBot.lavalink;
 using Lavalink4NET;
+using Lavalink4NET.Artwork;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -59,6 +60,7 @@ var host = Host
 
         services.AddSingleton<IAudioService, LavalinkNode>();
         services.AddSingleton<IDiscordClientWrapper, RemoraClientWrapper>();
+        services.AddTransient<IArtworkService, ArtworkService>();
         services.AddSingleton(sp => new LavalinkNodeOptions
         {
             RestUri =
