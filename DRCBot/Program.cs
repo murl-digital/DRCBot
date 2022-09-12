@@ -14,7 +14,6 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Gateway.Commands;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Extensions;
-using Remora.Discord.Commands.Responders;
 using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
@@ -37,11 +36,6 @@ var host = Host
         });
 
         services.AddDiscordCommands(true);
-        services.Configure<InteractionResponderOptions>(options =>
-        {
-            //options.SuppressAutomaticResponses = true;
-            options.UseEphemeralResponses = true;
-        });
         var tree = services.AddCommandTree();
 
         // voodoo reflection magic to find all event responders and register them automatically
