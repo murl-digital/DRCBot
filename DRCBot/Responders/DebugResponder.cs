@@ -3,7 +3,7 @@ using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 
-namespace DRCBot.lavalink.responders;
+namespace DRCBot.Responders;
 
 public class DebugResponder : IResponder<IGatewayEvent>
 {
@@ -13,9 +13,10 @@ public class DebugResponder : IResponder<IGatewayEvent>
     {
         _logger = logger;
     }
-    public async Task<Result> RespondAsync(IGatewayEvent gatewayEvent, CancellationToken ct = new ()) {
+    
+    public Task<Result> RespondAsync(IGatewayEvent gatewayEvent, CancellationToken ct = new ()) {
         _logger.LogDebug("got event: {}", gatewayEvent);
         
-        return Result.FromSuccess();
+        return Task.FromResult(Result.FromSuccess());
     }
 }
