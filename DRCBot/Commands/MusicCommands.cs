@@ -1,19 +1,18 @@
-﻿using DRCBot.lavalink;
+﻿using DRCBot.Lavalink;
+using DRCBot.Lavalink.Data;
 using Lavalink4NET;
 using Lavalink4NET.Player;
 using Lavalink4NET.Artwork;
+using Lavalink4NET.Rest;
 using Microsoft.Extensions.Logging;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
-using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Extensions.Embeds;
 using Remora.Results;
-using Constants = Remora.Discord.API.Constants;
 
 namespace DRCBot.Commands;
 
@@ -47,13 +46,17 @@ public class MusicCommands : CommandGroup
         if (_commandContext is not InteractionContext interactionContext)
             return Result.FromSuccess();
 
-        var player = _audioService.GetPlayer<LavalinkPlayer>(interactionContext.GuildID.Value.Value)
-                     ?? await _audioService.JoinAsync(interactionContext.GuildID.Value.Value, 776304033807335438);
+        var player = _audioService.GetPlayer<VoteLavalinkPlayer>(interactionContext.GuildID.Value.Value)
+                     ?? await _audioService.JoinAsync<VoteLavalinkPlayer>(interactionContext.GuildID.Value.Value, 776304033807335438);
 
         if (player.VoiceChannelId is null)
             await player.ConnectAsync(776304033807335438);
 
-        var track = await _audioService.GetTrackAsync("https://soundcloud.com/iamdraconium/this-moment");
+        var track = await _audioService.GetTrackAsync("explorers of the internet all you want for christmas", SearchMode.SoundCloud);
+        track.Context = new TrackContext
+        {
+            GuildMember = interactionContext.Member.Value
+        };
 
         await player.PlayAsync(track);
 
@@ -78,8 +81,8 @@ public class MusicCommands : CommandGroup
                 "I don't see you in any channel! If this is incorrect, leave and rejoin.",
                 flags: MessageFlags.Ephemeral);
 
-        var player = _audioService.GetPlayer<LavalinkPlayer>(interactionContext.GuildID.Value.Value)
-                     ?? await _audioService.JoinAsync(interactionContext.GuildID.Value.Value, channel.Value);
+        var player = _audioService.GetPlayer<VoteLavalinkPlayer>(interactionContext.GuildID.Value.Value)
+                     ?? await _audioService.JoinAsync<VoteLavalinkPlayer>(interactionContext.GuildID.Value.Value, channel.Value);
 
         if (player.VoiceChannelId is null)
             await player.ConnectAsync(channel.Value);
@@ -93,41 +96,40 @@ public class MusicCommands : CommandGroup
                 flags: MessageFlags.Ephemeral);
 
         _logger.LogDebug("playing track in {}:\n {}", channel, track.Uri);
-
-        await player.PlayAsync(track);
-
-        Uri? artworkUri;
-
-        try
+        track.Context = new TrackContext
         {
-            artworkUri = await _artworkService.ResolveAsync(track);
-        }
-        catch (Exception)
-        {
-            artworkUri = null;
-        }
+            GuildMember = interactionContext.Member.Value
+        };
 
-        var embedBuilder = new EmbedBuilder()
-            .WithTitle("Now Playing:")
-            // the only reason this would fail is if the max field amount is exceeded. It's not going to here.
-            .AddField("Title", track.Title, true).Entity
-            .AddField("Author", track.Author, true).Entity
-            .WithThumbnailUrl(artworkUri?.AbsoluteUri ??
-                              "https://i1.sndcdn.com/avatars-HbS9eVxJzwZg0wHp-K5Gy1Q-t500x500.jpg")
-            .WithCurrentTimestamp()
-            .WithFooter(new EmbedFooter(
-                $"Requested by {interactionContext.Member.Value.Nickname.Value ?? interactionContext.User.Username}",
-                GetAvatar(interactionContext.User)));
+        var queuePosition = await player.PlayAsync(track);
 
-        if (track.Uri is not null)
-            embedBuilder = embedBuilder.WithDescription($"*{track.Uri.AbsoluteUri}*");
+        if (queuePosition != 0)
+            return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
+                interactionContext.Token, $"Your track has been queued at position {queuePosition}");
 
-        var embed = embedBuilder.Build();
-
-        await _channelApi.CreateMessageAsync(interactionContext.ChannelID, embeds: new[] { embed.Entity });
-        
         return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
-            interactionContext.Token, "Your submission is playing! probably! i dont fucking know.");
+            interactionContext.Token, "Your track is now playing!");
+    }
+    
+    [Command("forceSkip")]
+    [RequireDiscordPermission(DiscordPermission.Administrator, DiscordPermission.ManageMessages)]
+    public async Task<IResult> ForceSkip(bool disconnect)
+    {
+        if (_commandContext is not InteractionContext interactionContext)
+            return Result.FromSuccess();
+
+        var player = _audioService.GetPlayer<VoteLavalinkPlayer>(interactionContext.GuildID.Value.Value);
+
+        if (player is null)
+            return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
+                interactionContext.Token,
+                "There are no active players.");
+
+        await player.SkipAsync();
+
+        return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
+            interactionContext.Token,
+            "Track skipped.");
     }
 
     [Command("stop")]
@@ -137,7 +139,7 @@ public class MusicCommands : CommandGroup
         if (_commandContext is not InteractionContext interactionContext)
             return Result.FromSuccess();
 
-        var player = _audioService.GetPlayer<LavalinkPlayer>(interactionContext.GuildID.Value.Value);
+        var player = _audioService.GetPlayer<VoteLavalinkPlayer>(interactionContext.GuildID.Value.Value);
 
         if (player is null)
             return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
@@ -149,13 +151,5 @@ public class MusicCommands : CommandGroup
         return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
             interactionContext.Token,
             "Player stopped.");
-    }
-
-    private static string GetAvatar(IUser user)
-    {
-        string Extension() => user.Avatar?.HasGif ?? false ? "gif" : "png";
-        return user.Avatar is null
-            ? $"{Constants.CDNBaseURL.AbsoluteUri}embed/avatars/{user.Discriminator % 5}.png"
-            : $"{Constants.CDNBaseURL.AbsoluteUri}avatars/{user.ID.Value}/{user.Avatar?.Value}.{Extension()}";
     }
 }

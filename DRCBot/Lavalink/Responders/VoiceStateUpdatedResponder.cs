@@ -4,7 +4,7 @@ using Remora.Discord.API.Gateway.Events;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 
-namespace DRCBot.lavalink.responders;
+namespace DRCBot.Lavalink.responders;
 
 public class VoiceStateUpdatedResponder : IResponder<IVoiceStateUpdate>
 {

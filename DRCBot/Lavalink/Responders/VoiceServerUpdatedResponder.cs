@@ -3,7 +3,7 @@ using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 
-namespace DRCBot.lavalink.responders;
+namespace DRCBot.Lavalink.responders;
 
 public class VoiceServerUpdatedResponder : IResponder<IVoiceServerUpdate>
 {

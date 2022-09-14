@@ -1,7 +1,10 @@
 ﻿using DRCBot.Commands;
-using DRCBot.lavalink;
+using DRCBot.Lavalink;
+using DRCBot.Lavalink.EventHandlers;
+using DRCBot.Lavalink.Utilities;
 using Lavalink4NET;
 using Lavalink4NET.Artwork;
+using Lavalink4NET.Tracking;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -55,6 +58,8 @@ var host = Host
         services.AddSingleton<IAudioService, LavalinkNode>();
         services.AddSingleton<IDiscordClientWrapper, RemoraClientWrapper>();
         services.AddTransient<IArtworkService, ArtworkService>();
+        services.AddSingleton<InactivityTrackingService>();
+        services.AddSingleton<InactivityTrackingOptions>();
         services.AddSingleton(sp => new LavalinkNodeOptions
         {
             RestUri =
@@ -68,6 +73,8 @@ var host = Host
                     .GetValue<string>("Password")
         });
         services.AddSingleton<IVoiceStateTracker, VoiceStateTracker>();
+        services.AddTransient<ITrackStartedEventHandler, TrackStartedEventHandler>();
+        services.AddTransient<IEmbedGenerator, EmbedGenerator>();
 
         services.AddSingleton<IMongoClient>(sp => new MongoClient(sp.GetService<IConfiguration>()
             .GetRequiredSection("MongoDB").GetValue<string>("ConnectionString")));
@@ -97,5 +104,13 @@ using (var scope = host.Services.CreateScope())
         }
     }
 }
+
+var audioService = host.Services.GetRequiredService<IAudioService>();
+audioService.TrackStarted += async (_, eventArgs) =>
+{
+    using var scope = host.Services.CreateScope();
+    var handler = scope.ServiceProvider.GetRequiredService<ITrackStartedEventHandler>();
+    await handler.HandleAsync(eventArgs.Player.VoiceChannelId.Value, eventArgs.Player.CurrentTrack);
+};
 
 await host.RunAsync();

@@ -6,7 +6,7 @@ using Remora.Discord.API.Gateway.Commands;
 using Remora.Discord.Gateway;
 using Remora.Rest.Core;
 
-namespace DRCBot.lavalink;
+namespace DRCBot.Lavalink;
 
 public class RemoraClientWrapper : IDiscordClientWrapper
 {

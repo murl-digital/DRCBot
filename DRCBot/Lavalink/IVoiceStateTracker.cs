@@ -1,4 +1,4 @@
-﻿namespace DRCBot.lavalink;
+﻿namespace DRCBot.Lavalink;
 
 public interface IVoiceStateTracker
 {
