@@ -3,6 +3,7 @@ using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Extensions.Formatting;
 using Remora.Discord.Gateway.Responders;
 using Remora.Rest.Core;
 using Remora.Results;
@@ -82,7 +83,7 @@ public class InteractionResponder : IResponder<IInteractionCreate>
                 return roleAddResult;
             
             await _interactionApi.CreateFollowupMessageAsync(gatewayEvent.ApplicationID, gatewayEvent.Token,
-                $"You got the (TODO: add role name or mention or whatever) role!", flags:MessageFlags.Ephemeral, ct: ct);
+                $"You got the {Mention.Role(role)} role!", flags:MessageFlags.Ephemeral, ct: ct);
         }
         
         

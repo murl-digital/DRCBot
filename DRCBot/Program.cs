@@ -2,6 +2,8 @@
 using DRCBot.Lavalink;
 using DRCBot.Lavalink.EventHandlers;
 using DRCBot.Lavalink.Utilities;
+using DRCBot.ReactionRoles.Abstractions.Data;
+using DRCBot.ReactionRoles.Data;
 using Lavalink4NET;
 using Lavalink4NET.Artwork;
 using Lavalink4NET.Tracking;
@@ -81,6 +83,7 @@ var host = Host
         services.AddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(sp
             .GetService<IConfiguration>()
             .GetRequiredSection("MongoDB").GetValue<string>("Database")));
+        services.AddTransient<IReactionRolesContext, ReactionRolesContext>();
     })
     .Build();
 
