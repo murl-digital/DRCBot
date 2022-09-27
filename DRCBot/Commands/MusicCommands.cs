@@ -148,6 +148,7 @@ public class MusicCommands : CommandGroup
         }
 
         [Command("url")]
+        [Description("Plays a track from a given URL. If you're sending a wav file, make sure it's 16 bit")]
         public async Task<IResult> PlayUrlAsync(string url)
         {
             if (_commandContext is not InteractionContext interactionContext)
@@ -236,6 +237,7 @@ public class MusicCommands : CommandGroup
         }
 
         [Command("attachment")]
+        [Description("Play an attachment. If it's a wav file, lavalink shits itself it's not 16 bit")]
         public async Task<IResult> PlayAttachmentAsync(IAttachment attachment)
         {
             if (_commandContext is not InteractionContext interactionContext)
@@ -255,7 +257,7 @@ public class MusicCommands : CommandGroup
 
             if (player.VoiceChannelId is null)
                 await player.ConnectAsync(channel.Value);
-            
+
             _logger.LogDebug("track url is {@Url}", attachment.Url);
 
             var track = await _audioService.GetTrackAsync(attachment.Url);
