@@ -61,7 +61,9 @@ var host = Host
 
         foreach (var type in AppDomain.CurrentDomain.GetAssemblies()
                      .SelectMany(s => s.GetTypes())
-                     .Where(p => p != typeof(CommandGroup) && typeof(CommandGroup).IsAssignableFrom(p)))
+                     .Where(p => p != typeof(CommandGroup) && typeof(CommandGroup).IsAssignableFrom(p))
+                     .Where(p => !p.IsNested)
+                )
             tree.WithCommandGroup(type);
 
         tree.Finish();
