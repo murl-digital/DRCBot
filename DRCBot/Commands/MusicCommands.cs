@@ -18,6 +18,50 @@ namespace DRCBot.Commands;
 [Group("music")]
 public class MusicCommands : CommandGroup
 {
+    private readonly ICommandContext _commandContext;
+    private readonly IDiscordRestInteractionAPI _interactionApi;
+    private readonly IVoiceStateTracker _voiceStateTracker;
+    private readonly IAudioService _audioService;
+
+    public MusicCommands(ICommandContext commandContext, IDiscordRestInteractionAPI interactionApi,
+        IVoiceStateTracker voiceStateTracker, IAudioService audioService)
+    {
+        _commandContext = commandContext;
+        _interactionApi = interactionApi;
+        _voiceStateTracker = voiceStateTracker;
+        _audioService = audioService;
+    }
+
+    [Command("skip")]
+    [Ephemeral]
+    public async Task<IResult> VoteSkipAsync()
+    {
+        if (_commandContext is not InteractionContext interactionContext)
+            return Result.FromSuccess();
+
+        if (_audioService.GetPlayer(interactionContext.GuildID.Value.Value) is not VoteLavalinkPlayer votePlayer)
+            return Result.FromSuccess();
+
+        var channel = _voiceStateTracker.GetProbableMemberChannel(interactionContext.GuildID.Value.Value,
+            interactionContext.User.ID.Value);
+        if (channel is null)
+            return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
+                interactionContext.Token,
+                "I don't see you in any channel! If this is incorrect, leave and rejoin.");
+
+        if (votePlayer.VoiceChannelId != channel)
+            return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
+                interactionContext.Token,
+                "You're not in the same channel as the bot! If this is incorrect, leave and rejoin.");
+
+        var info = await votePlayer.VoteAsync(interactionContext.User.ID.Value);
+
+        //TODO: proper vote response
+        return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
+            interactionContext.Token,
+            "You're vote was probably counted.");
+    }
+    
     [Group("admin")]
     [RequireDiscordPermission(DiscordPermission.Administrator, DiscordPermission.ManageMessages)]
     [Ephemeral]
