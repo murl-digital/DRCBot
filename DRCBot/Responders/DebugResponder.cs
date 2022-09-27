@@ -15,7 +15,7 @@ public class DebugResponder : IResponder<IGatewayEvent>
     }
     
     public Task<Result> RespondAsync(IGatewayEvent gatewayEvent, CancellationToken ct = new ()) {
-        _logger.LogDebug("got event: {}", gatewayEvent);
+        _logger.LogDebug("got event: {$Event}", gatewayEvent);
         
         return Task.FromResult(Result.FromSuccess());
     }
