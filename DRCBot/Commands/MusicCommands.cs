@@ -219,7 +219,7 @@ public class MusicCommands : CommandGroup
             if (track is null)
                 return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
                     interactionContext.Token,
-                    "There was a problem getting the track. If it's a file, that doesn't work for some reason.");
+                    "There was a problem getting the track.");
 
             _logger.LogDebug("playing track in {}:\n {}", channel, track.Uri);
             track.Context = new TrackContext
@@ -263,7 +263,7 @@ public class MusicCommands : CommandGroup
             if (track is null)
                 return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
                     interactionContext.Token,
-                    "There was a problem getting the track. If it's a file, that doesn't work for some reason.");
+                    "There was a problem getting the track.");
 
             _logger.LogDebug("playing track in {}:\n {}", channel, track.Uri);
             track.Context = new TrackContext
@@ -310,7 +310,7 @@ public class MusicCommands : CommandGroup
             if (track is null)
                 return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
                     interactionContext.Token,
-                    "There was a problem getting the track. If it's a file, that doesn't work for some reason.");
+                    "There was a problem getting the track. If it's a WAV, make sure it's 16 bit.");
 
             _logger.LogDebug("playing track in {}:\n {}", channel, track.Uri);
             track.Context = new TrackContext
