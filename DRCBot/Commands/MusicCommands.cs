@@ -1,4 +1,5 @@
-﻿using DRCBot.Lavalink;
+﻿using System.ComponentModel;
+using DRCBot.Lavalink;
 using DRCBot.Lavalink.Data;
 using Lavalink4NET;
 using Lavalink4NET.Player;
