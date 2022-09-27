@@ -315,7 +315,8 @@ public class MusicCommands : CommandGroup
             _logger.LogDebug("playing track in {}:\n {}", channel, track.Uri);
             track.Context = new TrackContext
             {
-                GuildMember = interactionContext.Member.Value
+                GuildMember = interactionContext.Member.Value,
+                IsFile = true
             };
 
             var queuePosition = await player.PlayAsync(track);

@@ -45,15 +45,12 @@ public class EmbedGenerator : IEmbedGenerator
                 $"Requested by {context.GuildMember.Nickname.Value ?? context.GuildMember.User.Value.Username}",
                 GetAvatar(context.GuildMember.User.Value)));
 
-        if (track.Uri is not null)
+        if (track.Uri is not null && !context.IsFile)
             embedBuilder = embedBuilder.WithDescription($"*{track.Uri.AbsoluteUri}*");
 
         var embed = embedBuilder.Build();
 
-        if (!embed.IsSuccess)
-            return null;
-
-        return embed.Entity;
+        return !embed.IsSuccess ? null : embed.Entity;
     }
     
     private static string GetAvatar(IUser user)

@@ -5,4 +5,5 @@ namespace DRCBot.Lavalink.Data;
 public class TrackContext
 {
     public IGuildMember GuildMember { get; init; }
+    public bool IsFile { get; init; }
 }
