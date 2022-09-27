@@ -28,13 +28,6 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
 
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-    .Enrich.WithExceptionDetails()
-    .WriteTo.Async(wt => wt.Console(outputTemplate: "{Timestamp:HH:mm:ss} {Level:w3} :: {Message:lj}{NewLine}{Exception}"))
-    .CreateLogger();
-
 var host = Host
     .CreateDefaultBuilder()
     .AddDiscordService(services =>
@@ -97,7 +90,12 @@ var host = Host
             .GetRequiredSection("MongoDB").GetValue<string>("Database")));
         services.AddTransient<IReactionRolesContext, ReactionRolesContext>();
     })
-    .UseSerilog()
+    .UseSerilog(new LoggerConfiguration()
+        .MinimumLevel.Debug()
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+        .Enrich.WithExceptionDetails()
+        .WriteTo.Async(wt => wt.Console(outputTemplate: "{Timestamp:HH:mm:ss} {Level:w3} :: {Message:lj}{NewLine}{Exception}"))
+        .CreateLogger())
     .Build();
 
 using (var scope = host.Services.CreateScope())
