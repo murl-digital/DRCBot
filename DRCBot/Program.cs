@@ -24,6 +24,16 @@ using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
 using Remora.Discord.Gateway.Responders;
 using Remora.Discord.Hosting.Extensions;
+using Serilog;
+using Serilog.Events;
+using Serilog.Exceptions;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.WithExceptionDetails()
+    .WriteTo.Async(wt => wt.Console(outputTemplate: "{Timestamp:HH:mm:ss} {Level:w3} :: {Message:lj}{NewLine}{Exception}"))
+    .CreateLogger();
 
 var host = Host
     .CreateDefaultBuilder()
@@ -85,6 +95,7 @@ var host = Host
             .GetRequiredSection("MongoDB").GetValue<string>("Database")));
         services.AddTransient<IReactionRolesContext, ReactionRolesContext>();
     })
+    .UseSerilog()
     .Build();
 
 using (var scope = host.Services.CreateScope())
