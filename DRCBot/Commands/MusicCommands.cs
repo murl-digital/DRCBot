@@ -148,10 +148,11 @@ public class MusicCommands : CommandGroup
         }
 
         [Command("volume")]
+        [Description("Set player volume, scaled to 0-1 to not destroy your ears")]
         public async Task<IResult> SetPlayerVolumeAsync(
-            /*[MinValue(0)]
-            [MaxValue(1)]*/
-            float volume
+            [MinValue(0)]
+            [MaxValue(10)]
+            int volume
         )
         {
             if (_commandContext is not InteractionContext interactionContext)
@@ -164,7 +165,7 @@ public class MusicCommands : CommandGroup
                     interactionContext.Token,
                     "There are no active players.");
 
-            await player.SetVolumeAsync((float)volume);
+            await player.SetVolumeAsync((float)volume/10);
 
             return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
                 interactionContext.Token,
