@@ -90,12 +90,11 @@ var host = Host
             .GetRequiredSection("MongoDB").GetValue<string>("Database")));
         services.AddTransient<IReactionRolesContext, ReactionRolesContext>();
     })
-    .UseSerilog(new LoggerConfiguration()
-        .MinimumLevel.Debug()
-        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
         .Enrich.WithExceptionDetails()
         .WriteTo.Async(wt => wt.Console(outputTemplate: "{Timestamp:HH:mm:ss} {Level:w3} :: {Message:lj}{NewLine}{Exception}"))
-        .CreateLogger())
+    )
     .Build();
 
 using (var scope = host.Services.CreateScope())
