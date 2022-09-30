@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Drawing;
 using DRCBot.ReactionRoles.Abstractions.Data;
 using DRCBot.ReactionRoles.Data;
 using Remora.Commands.Attributes;
@@ -39,7 +40,45 @@ public class ReactionRoleCommands : CommandGroup
         _userApi = userApi;
     }
 
+    [Command("help")]
+    [Description("Provides an explanation of how DRCBot does reaction roles.")]
+    public async Task<IResult> SendHelpMessageAsync()
+    {
+        if (_commandContext is not InteractionContext interactionContext)
+            return Result.FromSuccess();
+
+        return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
+            interactionContext.Token,
+            embeds: new[]
+            {
+                new EmbedBuilder()
+                    .WithTitle("So, how does this work?")
+                    .WithDescription(
+                        "Reaction Roles work similarly to other bots in DRCBot. The process of setting up reaction roles involves 3 steps: ```" +
+                        "\n1. Create your index with /reactionroles init" +
+                        "\n2. Create one or more group messages with /reactionroles createmessage" +
+                        "\n3. Add \"reactions\" with /reactionroles addrole```")
+                    .AddField("Wait, what's an index?",
+                        "You can think of an index as the table of contents in a book. The index is a message sent by DRCBot which contains links to all the other reaction messages. You can't create any reaction messages unless you've created an index already.")
+                    .Entity
+                    .AddField("Why is \"reactions\" in quotes?",
+                        "Because DRCBot doesn't actually use reactions for Reaction Roles. Instead, it uses buttons. The process of setting it up is still the same, just the way users get roles is slightly different.")
+                    .Entity
+                    .Build()
+                    .Entity,
+                new EmbedBuilder()
+                    .WithTitle("BUT WAIT, THERE'S CAVEATS")
+                    .WithColour(Color.Crimson)
+                    .AddField("THERE'S A LIMIT TO HOW MANY REACTION ROLES YOU CAN HAVE",
+                        "With how the current system works, you can have at most 625 roles. If you need more than that,\n\n...why?")
+                    .Entity
+                    .Build()
+                    .Entity
+            });
+    }
+
     [Command("init")]
+    [Description("Creates a message index in the specified channel.")]
     public async Task<IResult> InitializeReactionRoleIndexAsync(
         [Description("The channel the message will be posted in")] [ChannelTypes(ChannelType.GuildText)]
         IChannel channel)
@@ -160,7 +199,8 @@ public class ReactionRoleCommands : CommandGroup
                 interactionContext.Token,
                 "The limit for reaction roles on a single message is 25.", flags: MessageFlags.Ephemeral);
 
-        buttons.Add(new ButtonComponent(ButtonComponentStyle.Secondary, name ?? role.Name, new(emoji),
+        buttons.Add(new ButtonComponent(ButtonComponentStyle.Secondary, name ?? role.Name,
+            emoji is null ? default(Optional<IPartialEmoji>) : new(emoji),
             $"rr:{role.ID}"));
 
         await _channelApi.EditMessageAsync(message.ChannelID, message.ID, embeds: new(message.Embeds),
@@ -213,7 +253,7 @@ public class ReactionRoleCommands : CommandGroup
         return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
             interactionContext.Token, "Reaction role successfully removed!", flags: MessageFlags.Ephemeral);
     }
-    
+
     private async Task<IResult> UpdateIndexAsync(IChannel channel, string title, ReactionRolesIndex index,
         Result<IMessage> message)
     {
@@ -228,7 +268,8 @@ public class ReactionRoleCommands : CommandGroup
         var indexEmbedBuilder = EmbedBuilder.FromEmbed(indexMessage.Entity.Embeds[0])
             .AddField(title,
                 Markdown.Hyperlink("Link",
-                    $"https://discord.com/channels/{channel.GuildID.Value}/{channel.ID}/{message.Entity.ID}"), true).Entity;
+                    $"https://discord.com/channels/{channel.GuildID.Value}/{channel.ID}/{message.Entity.ID}"), true)
+            .Entity;
 
         await _channelApi.DeleteMessageAsync(indexMessage.Entity.ChannelID, indexMessage.Entity.ID);
         var newIndexMessage = await _channelApi.CreateMessageAsync(indexMessage.Entity.ChannelID,
