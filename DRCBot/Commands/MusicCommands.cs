@@ -57,10 +57,16 @@ public class MusicCommands : CommandGroup
 
         var info = await votePlayer.VoteAsync(interactionContext.User.ID.Value);
 
-        //TODO: proper vote response
+        if (info.WasAdded)
+        {
+            return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
+                interactionContext.Token,
+                info.WasSkipped ? "Your vote has been counted." : "Your vote has been counted, and the current track has been skipped.");
+        }
+
         return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
             interactionContext.Token,
-            "You're vote was probably counted.");
+            "You've voted already.");
     }
     
     [Group("admin")]
@@ -78,33 +84,6 @@ public class MusicCommands : CommandGroup
             _commandContext = commandContext;
             _interactionApi = interactionApi;
             _audioService = audioService;
-        }
-
-        [Command("test")]
-        public async Task<IResult> TestAudio()
-        {
-            if (_commandContext is not InteractionContext interactionContext)
-                return Result.FromSuccess();
-
-            var player = _audioService.GetPlayer<VoteLavalinkPlayer>(interactionContext.GuildID.Value.Value)
-                         ?? await _audioService.JoinAsync<VoteLavalinkPlayer>(interactionContext.GuildID.Value.Value,
-                             776304033807335438);
-
-            if (player.VoiceChannelId is null)
-                await player.ConnectAsync(776304033807335438);
-
-            var track = await _audioService.GetTrackAsync("explorers of the internet all you want for christmas",
-                SearchMode.SoundCloud);
-            track.Context = new TrackContext
-            {
-                GuildMember = interactionContext.Member.Value
-            };
-
-            await player.PlayAsync(track);
-
-            return await _interactionApi.CreateFollowupMessageAsync(interactionContext.ApplicationID,
-                interactionContext.Token,
-                "poggers", flags: MessageFlags.Ephemeral);
         }
 
         [Command("forceSkip")]
@@ -200,6 +179,9 @@ public class MusicCommands : CommandGroup
             if (_commandContext is not InteractionContext interactionContext)
                 return Result.FromSuccess();
 
+            if (!interactionContext.Member.HasValue)
+                return Result.FromSuccess();
+
             var sender = interactionContext.User.ID.Value;
 
             var channel = _voiceStateTracker.GetProbableMemberChannel(interactionContext.GuildID.Value.Value, sender);
@@ -242,6 +224,9 @@ public class MusicCommands : CommandGroup
         public async Task<IResult> PlaySearchQueryAsync(string query, SearchMode searchMode)
         {
             if (_commandContext is not InteractionContext interactionContext)
+                return Result.FromSuccess();
+            
+            if (!interactionContext.Member.HasValue)
                 return Result.FromSuccess();
 
             var sender = interactionContext.User.ID.Value;
@@ -287,6 +272,9 @@ public class MusicCommands : CommandGroup
         public async Task<IResult> PlayAttachmentAsync(IAttachment attachment)
         {
             if (_commandContext is not InteractionContext interactionContext)
+                return Result.FromSuccess();
+            
+            if (!interactionContext.Member.HasValue)
                 return Result.FromSuccess();
 
             var sender = interactionContext.User.ID.Value;
