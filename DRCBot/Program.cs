@@ -123,6 +123,11 @@ audioService.TrackStarted += async (_, eventArgs) =>
 {
     using var scope = host.Services.CreateScope();
     var handler = scope.ServiceProvider.GetRequiredService<ITrackStartedEventHandler>();
+    if (eventArgs.Player.VoiceChannelId is null || eventArgs.Player.CurrentTrack is null)
+    {
+        //something has definitely gone wrong
+        return;
+    }
     await handler.HandleAsync(eventArgs.Player.VoiceChannelId.Value, eventArgs.Player.CurrentTrack);
 };
 
